@@ -2,9 +2,8 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import Any, Tuple, Type, Optional
+from typing import Any, Tuple, Type, Optional, Dict
 from util import force_setattr
-
 
 
 @dataclass(frozen=True)
@@ -21,19 +20,14 @@ class Chunk:
         return None
 
     def get_leftmost(self) -> Optional[Any]:
-
         if l := self.find_a(Leftmost):
             return l.x
         return None
 
     def get_length(self) -> Optional[int]:
-
         if l := self.find_a(Length):
             return l.n
         return None
-        
-        
-        
 
 @dataclass(frozen=True)
 class Delta:
@@ -41,7 +35,8 @@ class Delta:
     rhs: Any
 
     def generate_rhs(self, given_lhs) -> Any:
-        pass
+        symbols = match_lhs(self.lhs, given_lhs)
+        return self.rhs.evaluate(symbols)
 
 @dataclass(frozen=True)
 class Run:
@@ -51,17 +46,29 @@ class Run:
         elem = ch.get_leftmost()
         length = ch.get_length()
         result = [elem]
-        for _ in range(length - 1):
+        for _ in range(1, length):
             elem = self.delta.generate_rhs(elem)
             result.append(elem)
         return ''.join(result)
 
 class L:
-    pass
+    @classmethod
+    def evaluate(cls, symbols: Dict[Any, Any]):
+        return symbols.get(cls, None)
 
 @dataclass(frozen=True)
 class Succ:
     arg: Any
+
+    def evaluate(self, symbols: Dict[Any, Any]):
+        if (v := self.arg.evaluate(symbols)) is not None:
+            if isinstance(v, str):
+                return chr(ord(v[0]) + 1)
+            else:
+                raise NotImplementedError()
+        else: 
+            raise NotImplementedError('Fizzle')
+
 
 @dataclass(frozen=True)
 class Length:
@@ -72,6 +79,8 @@ class Leftmost:
     x: Any # leftmost "thing" (letter, chunk, ...)
 
 
+# GLOBAL METHODS
+
 def string_to_chunk(s: str):
     for left, right in pairwise(s):
         if ord(left) + 1 != ord(right):
@@ -81,11 +90,18 @@ def string_to_chunk(s: str):
 def chunk_to_string(ch: Chunk) -> str:
     # if there is a run object in chunk's args...
     if (run := ch.find_a(Run)) is not None:
-        print(run)  # DEBUG
         return run.to_string(ch)
     else:
         return 'abc'
 
+def match_lhs(lhs: Any, given_lhs: Any) -> dict[Any, Any]:
+    if lhs is L:
+        return { L: given_lhs }
+    else:
+        raise NotImplementedError()
+
+
+# TESTS
 class TestChunk(unittest.TestCase):
     
     def test_abc(self):
@@ -103,4 +119,4 @@ class TestChunk(unittest.TestCase):
         got = chunk_to_string(
             Chunk(Run(Delta(L, Succ(L))), Leftmost('a'), Length(3))
         )
-        
+        self.assertEqual(expect, got)
