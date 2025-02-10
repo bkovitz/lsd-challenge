@@ -120,3 +120,10 @@ class TestChunk(unittest.TestCase):
             Chunk(Run(Delta(L, Succ(L))), Leftmost('a'), Length(3))
         )
         self.assertEqual(expect, got)
+
+""" NEXT TESTS:
+Chunk[Run[L -> Succ[L]]] 'a__' -> 'abc'
+Chunk[Run[L -> Succ[L]]] '___' -> Fizzle(need a letter)
+Chunk[Run[L -> Succ[L]]] '_b_' -> 'abc'
+Chunk[Run[L -> Succ[L]]] 'a...' -> Fizzle(need length)
+"""
