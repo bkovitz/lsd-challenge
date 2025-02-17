@@ -60,15 +60,46 @@ class L:
 class Succ:
     arg: Any
 
+    @classmethod
+    def detect(cls, s: str) -> bool: 
+        for left, right in pairwise(s):
+            if ord(left) + 1 != ord(right):
+                return False
+        return True
+
     def evaluate(self, symbols: Dict[Any, Any]):
         if (v := self.arg.evaluate(symbols)) is not None:
             if isinstance(v, str):
-                return chr(ord(v[0]) + 1)
+                result = chr(ord(v[0]) + 1)
+                if result > 'z':
+                    raise Fizzle
+                return result
             else:
                 raise NotImplementedError()
         else: 
             raise NotImplementedError('Fizzle')
 
+@dataclass(frozen=True)
+class Same:
+    arg: Any
+
+    @classmethod
+    def detect(cls, s: str) -> bool:
+        for left, right in pairwise(s):
+            if left != right:
+                return False
+        return True
+
+@dataclass(frozen=True)
+class Pred:
+    arg: Any
+
+    @classmethod
+    def detect(cls, s: str) -> bool: 
+        for left, right in pairwise(s):
+            if ord(left) - 1 != ord(right):
+                return False
+        return True
 
 @dataclass(frozen=True)
 class Length:
@@ -78,21 +109,35 @@ class Length:
 class Leftmost:
     x: Any # leftmost "thing" (letter, chunk, ...)
 
+class Fizzle(Exception):
+    pass
 
 # GLOBAL METHODS
 
 def string_to_chunk(s: str):
-    for left, right in pairwise(s):
-        if ord(left) + 1 != ord(right):
-            return Chunk(s) # arbitrary Chunk
-    return Chunk(Run(Delta(L, Succ(L))))  # successor Chunk
+    for detector in [Succ, Same, Pred]:
+        if detector.detect(s):
+            return Chunk(Run(Delta(L, detector(L))))
+    return Chunk(s)
+#    all_match = True
+#    all_have_succ = True
+#    for left, right in pairwise(s):
+#        if left != right:
+#            all_match = False
+#        #if ord(left) + 1 != ord(right):
+#            #return Chunk(s) # arbitrary Chunk
+#    if all_match:
+#        return Chunk(Run(Delta(L, Same(L))))
+#    return Chunk(Run(Delta(L, Succ(L))))  # successor Chunk
 
 def chunk_to_string(ch: Chunk) -> str:
     # if there is a run object in chunk's args...
     if (run := ch.find_a(Run)) is not None:
         return run.to_string(ch)
+    elif (s := ch.find_a(str)) is not None:
+        return s
     else:
-        return 'abc'
+        raise NotImplementedError
 
 def match_lhs(lhs: Any, given_lhs: Any) -> dict[Any, Any]:
     if lhs is L:
@@ -120,6 +165,29 @@ class TestChunk(unittest.TestCase):
             Chunk(Run(Delta(L, Succ(L))), Leftmost('a'), Length(3))
         )
         self.assertEqual(expect, got)
+
+    def test_bgl_to_string(self):
+        expect = 'bgl'
+        got = chunk_to_string(Chunk('bgl'))
+        self.assertEqual(expect, got)
+
+    def test_aaa(self):
+        chunk = string_to_chunk('aaa')
+        expect = Chunk(Run(Delta(L, Same(L))))
+        self.assertEqual(chunk, expect)
+    
+    def test_cba(self):
+        chunk = string_to_chunk('cba')
+        expect = Chunk(Run(Delta(L, Pred(L))))
+        self.assertEqual(chunk, expect)
+
+    def test_a_no_pred(self):
+        with self.assertRaises(Fizzle):
+            got = chunk_to_string(
+                Chunk(Run(Delta(L, Succ(L))), Leftmost('z'), Length(3))
+            )
+            
+
 
 """ NEXT TESTS:
 Chunk[Run[L -> Succ[L]]] 'a__' -> 'abc'
