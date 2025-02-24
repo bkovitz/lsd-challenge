@@ -28,6 +28,15 @@ class Chunk:
         if l := self.find_a(Length):
             return l.n
         return None
+    
+    def paint(self, ctx: Context) -> Context:
+        if (run := self.find_a(Run)) is not None:
+            return run.paint(ctx)
+        elif (s := self.find_a(str)) is not None:
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+            
 
 @dataclass(frozen=True)
 class Delta:
@@ -41,6 +50,16 @@ class Delta:
 @dataclass(frozen=True)
 class Run:
     delta: Delta
+
+    def paint(self, ctx: Context):
+        length = ctx.get_length()
+        elem = ctx.get_leftmost()
+        result = [elem]
+        for _ in range(1, length):
+            elem = self.delta.generate_rhs(elem)
+            result.append(elem)
+        new_canvas = ''.join(result)
+        return ctx.with_canvas(new_canvas)
 
     def to_string(self, ch: Chunk) -> str:
         elem = ch.get_leftmost()
@@ -90,6 +109,16 @@ class Same:
                 return False
         return True
 
+    def evaluate(self, symbols: Dict[Any, Any]):
+        if (v := self.arg.evaluate(symbols)) is not None:
+            if isinstance(v, str):
+                return v
+            else:
+                raise NotImplementedError()
+        else: 
+            raise NotImplementedError('Fizzle')
+
+
 @dataclass(frozen=True)
 class Pred:
     arg: Any
@@ -100,6 +129,18 @@ class Pred:
             if ord(left) - 1 != ord(right):
                 return False
         return True
+
+    def evaluate(self, symbols: Dict[Any, Any]):
+        if (v := self.arg.evaluate(symbols)) is not None:
+            if isinstance(v, str):
+                result = chr(ord(v[0]) - 1)
+                if result < 'a':
+                    raise Fizzle
+                return result
+            else:
+                raise NotImplementedError()
+        else: 
+            raise NotImplementedError('Fizzle')
 
 @dataclass(frozen=True)
 class Length:
@@ -112,6 +153,27 @@ class Leftmost:
 class Fizzle(Exception):
     pass
 
+class Context:
+    def __init__ (self, ch: Chunk, canvas: str):
+        self.ch = ch
+        self.canvas = canvas #TODO IMPLEMENT CANVAS CLASS
+    
+    def paint(self) -> Context:
+        return self.ch.paint(self)
+
+    def get_length(self) -> int:
+        return len(self.canvas)  # TODO Ask Chunk if Canvas doesn't know
+        # TODO What if canvas and Chunk have inconsistent lengths?
+
+    def get_leftmost(self) -> str:
+        if self.canvas[0] != '_': # TODO What if canvas is length = 0?
+            return self.canvas[0]
+        else:
+            raise NotImplementedError
+
+    def with_canvas(self, canvas: str) -> Context:
+        # TODO What if the new canvas is incompatible with the old canvas?
+        return Context(self.ch, canvas)
 # GLOBAL METHODS
 
 def string_to_chunk(s: str):
@@ -138,7 +200,11 @@ def chunk_to_string(ch: Chunk) -> str:
         return s
     else:
         raise NotImplementedError
-
+"""
+def paint_on_canvas(ch: Chunk, canvas: str) -> str:
+    ctx = make_context(ch, canvas)
+    return ch.paint(ctx)
+"""
 def match_lhs(lhs: Any, given_lhs: Any) -> dict[Any, Any]:
     if lhs is L:
         return { L: given_lhs }
@@ -176,22 +242,72 @@ class TestChunk(unittest.TestCase):
         expect = Chunk(Run(Delta(L, Same(L))))
         self.assertEqual(chunk, expect)
     
+    def test_regen_aaa(self):
+        self.assertEqual(
+            chunk_to_string(
+                Chunk(Run(Delta(L, Same(L))), Leftmost('a'), Length(3))
+            ),
+            'aaa'
+        )
+
     def test_cba(self):
         chunk = string_to_chunk('cba')
         expect = Chunk(Run(Delta(L, Pred(L))))
         self.assertEqual(chunk, expect)
 
+    def test_regen_cba(self):
+        self.assertEqual(
+            chunk_to_string(
+                Chunk(Run(Delta(L, Pred(L))), Leftmost('c'), Length(3))
+            ),
+            'cba'
+        )
+
+    def test_z_no_succ(self):
+        with self.assertRaises(Fizzle):
+            got = chunk_to_string(
+                Chunk(Run(Delta(L, Succ(L))), Leftmost('z'), Length(2))
+            )
+
+    def test_z_no_succ2(self):
+        with self.assertRaises(Fizzle):
+            succ = Succ(L)
+            symbols = {L: 'z'}
+            shouldnt_work = succ.evaluate(symbols)
+            
     def test_a_no_pred(self):
         with self.assertRaises(Fizzle):
             got = chunk_to_string(
-                Chunk(Run(Delta(L, Succ(L))), Leftmost('z'), Length(3))
+                Chunk(Run(Delta(L, Pred(L))), Leftmost('a'), Length(2))
             )
-            
 
+    def test_a_no_pred2(self):
+        with self.assertRaises(Fizzle):
+            pred = Pred(L)
+            symbols = {L: 'a'}
+            shouldnt_work = pred.evaluate(symbols)
+    
+    def test_run_succ_with_blanks(self):
+        ch = Chunk(Run(Delta(L, Succ(L))))
+        ctx = Context(ch, 'a__')
+        self.assertEqual(
+            ctx.paint().canvas,
+            'abc'
+        )
 
 """ NEXT TESTS:
 Chunk[Run[L -> Succ[L]]] 'a__' -> 'abc'
 Chunk[Run[L -> Succ[L]]] '___' -> Fizzle(need a letter)
 Chunk[Run[L -> Succ[L]]] '_b_' -> 'abc'
 Chunk[Run[L -> Succ[L]]] 'a...' -> Fizzle(need length)
+Regen from Run[Same]  DONE
+Regen from Run[Pred]  DONE
+Regen from Run[Succ] from '__c'
+Fizzle on Succ[z]  DONE
+Fizzle on Pred[a]  DONE
+to_string for Same & Pred
+string_to_chunk: add Pred
+
+  'aaaihg'
+
 """
