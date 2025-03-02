@@ -22,7 +22,7 @@ class Chunk:
     def get_leftmost(self) -> Optional[Any]:
         if l := self.find_a(Leftmost):
             return l.x
-        return None
+        raise FizzleNoLeftmost
 
     def get_length(self) -> Optional[int]:
         if l := self.find_a(Length):
@@ -47,11 +47,16 @@ class Delta:
         symbols = match_lhs(self.lhs, given_lhs)
         return self.rhs.evaluate(symbols)
 
+    def generate_lhs(self, given_rhs) -> Any:
+        symbols = match_lhs(self.lhs, given_rhs)
+        return self.rhs.evaluate(symbols)
+
 @dataclass(frozen=True)
 class Run:
     delta: Delta
 
     def paint(self, ctx: Context):
+        """
         length = ctx.get_length()
         elem = ctx.get_leftmost()
         result = [elem]
@@ -60,6 +65,35 @@ class Run:
             result.append(elem)
         new_canvas = ''.join(result)
         return ctx.with_canvas(new_canvas)
+        """
+        idx, letter = ctx.get_known_letter()
+        new_canvas = (
+            self.make_span(idx - 1, 0, letter)
+            +
+            letter
+            +
+            self.make_span(idx + 1, ctx.get_length(), letter)
+        )
+        return ctx.with_canvas(new_canvas)
+
+    def make_span(
+        self, left_idx: int, right_idx: int, letter: str
+    ) -> str:
+        '''left_idx..right_idx is inclusive. start_letter should
+        be from outside this range.'''
+        print('MAKE SPAN!!', left_idx, right_idx)
+        if left_idx < right_idx:
+            next_letter = self.delta.generate_lhs
+        else:
+            next_letter = self.delta.generate_rhs
+        result = ''
+        for i in range(0, abs(left_idx - right_idx) + 1):
+            if i >= 0:
+                letter = next_letter(letter)
+                result += letter
+        return result
+        
+        
 """
     def to_string(self, ch: Chunk) -> str:
         elem = ch.get_leftmost()
@@ -97,6 +131,11 @@ class Succ:
                 raise NotImplementedError()
         else: 
             raise NotImplementedError('Fizzle')
+    
+    def reverse_evaluate(self, symbols: Dict[Any, Any]):
+        pred = Pred(self.arg)
+        return pred.evaluate(symbols)
+        
 
 @dataclass(frozen=True)
 class Same:
@@ -156,6 +195,12 @@ class Fizzle(Exception):
 class FizzleNoLength(Fizzle):
     pass
 
+class FizzleNoLeftmost(Fizzle):
+    pass
+
+class FizzleNoStartLetter(Fizzle):
+    pass
+
 class Context:
     def __init__ (self, ch: Chunk, canvas: str):
         self.ch = ch
@@ -163,6 +208,11 @@ class Context:
     
     def paint(self) -> Context:
         return self.ch.paint(self)
+
+    def at(self, idx: int) -> str:
+        if self.canvas is None:
+            raise NotImplementedError
+        return self.canvas[idx]  # TODO What if idx is off canvas?
 
     def get_length(self) -> int:
         try:
@@ -177,7 +227,19 @@ class Context:
         if self.canvas[0] != '_': # TODO What if canvas is length = 0?
             return self.canvas[0]
         else:
-            raise NotImplementedError
+            raise FizzleNoLeftmost 
+
+    def get_known_letter(self) -> str:
+        try:
+            return 0, self.ch.get_leftmost()
+        except FizzleNoLeftmost:
+            if self.canvas is None:
+                raise FizzleNoStartLetter
+
+            for i in range(self.get_length()):
+                if(self.canvas[i] != '_'):
+                    return i, self.canvas[i]
+            raise FizzleNoStartLetter
 
     def with_canvas(self, canvas: str) -> Context:
         # TODO What if the new canvas is incompatible with the old canvas?
@@ -200,7 +262,7 @@ def string_to_chunk(s: str):
 #        return Chunk(Run(Delta(L, Same(L))))
 #    return Chunk(Run(Delta(L, Succ(L))))  # successor Chunk
 
-def chunk_to_string(ch: Chunk, ctx: Optional[Context]=None) -> str:
+def chunk_to_string(ch: Chunk, ctx: Optional[Context] = None) -> str:
     if ctx is None:
         ctx = Context(ch, None)
     return ctx.paint().canvas
@@ -307,6 +369,21 @@ class TestChunk(unittest.TestCase):
             ctx.paint().canvas,
             'abc'
         )
+
+    def test_run_with_all_blanks(self):
+        ch = Chunk(Run(Delta(L, Succ(L))))
+        ctx = Context(ch, '___')
+        with self.assertRaises(Fizzle):  # TODO Which Fizzle?
+            ctx.paint()
+
+    def test_run_succ_start_in_middle(self):
+        ch = Chunk(Run(Delta(L, Succ(L))))
+        ctx = Context(ch, '__c_')
+        self.assertEqual(
+            ctx.paint().canvas,
+            'abcd'
+        )
+
 
 """ NEXT TESTS:
 Chunk[Run[L -> Succ[L]]] 'a__' -> 'abc'
