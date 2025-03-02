@@ -27,13 +27,13 @@ class Chunk:
     def get_length(self) -> Optional[int]:
         if l := self.find_a(Length):
             return l.n
-        return None
+        raise FizzleNoLength
     
     def paint(self, ctx: Context) -> Context:
         if (run := self.find_a(Run)) is not None:
             return run.paint(ctx)
         elif (s := self.find_a(str)) is not None:
-            raise NotImplementedError
+            return ctx.with_canvas(s)
         else:
             raise NotImplementedError
             
@@ -60,7 +60,7 @@ class Run:
             result.append(elem)
         new_canvas = ''.join(result)
         return ctx.with_canvas(new_canvas)
-
+"""
     def to_string(self, ch: Chunk) -> str:
         elem = ch.get_leftmost()
         length = ch.get_length()
@@ -69,7 +69,7 @@ class Run:
             elem = self.delta.generate_rhs(elem)
             result.append(elem)
         return ''.join(result)
-
+"""
 class L:
     @classmethod
     def evaluate(cls, symbols: Dict[Any, Any]):
@@ -153,6 +153,9 @@ class Leftmost:
 class Fizzle(Exception):
     pass
 
+class FizzleNoLength(Fizzle):
+    pass
+
 class Context:
     def __init__ (self, ch: Chunk, canvas: str):
         self.ch = ch
@@ -162,10 +165,15 @@ class Context:
         return self.ch.paint(self)
 
     def get_length(self) -> int:
-        return len(self.canvas)  # TODO Ask Chunk if Canvas doesn't know
+        try:
+            return len(self.canvas)
+        except TypeError:
+            return self.ch.get_length()
         # TODO What if canvas and Chunk have inconsistent lengths?
 
     def get_leftmost(self) -> str:
+        if self.canvas is None:
+           return self.ch.get_leftmost() 
         if self.canvas[0] != '_': # TODO What if canvas is length = 0?
             return self.canvas[0]
         else:
@@ -192,7 +200,11 @@ def string_to_chunk(s: str):
 #        return Chunk(Run(Delta(L, Same(L))))
 #    return Chunk(Run(Delta(L, Succ(L))))  # successor Chunk
 
-def chunk_to_string(ch: Chunk) -> str:
+def chunk_to_string(ch: Chunk, ctx: Optional[Context]=None) -> str:
+    if ctx is None:
+        ctx = Context(ch, None)
+    return ctx.paint().canvas
+    """
     # if there is a run object in chunk's args...
     if (run := ch.find_a(Run)) is not None:
         return run.to_string(ch)
@@ -200,6 +212,7 @@ def chunk_to_string(ch: Chunk) -> str:
         return s
     else:
         raise NotImplementedError
+    """
 """
 def paint_on_canvas(ch: Chunk, canvas: str) -> str:
     ctx = make_context(ch, canvas)
@@ -305,7 +318,8 @@ Regen from Run[Pred]  DONE
 Regen from Run[Succ] from '__c'
 Fizzle on Succ[z]  DONE
 Fizzle on Pred[a]  DONE
-to_string for Same & Pred
+#to_string for Same & Pred   
+replace to_string() with paint()
 string_to_chunk: add Pred
 
   'aaaihg'

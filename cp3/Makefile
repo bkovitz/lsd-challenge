@@ -5,3 +5,5 @@ ut:
 
 tags:
 	ctags *.py
+
+.PHONY: tags
