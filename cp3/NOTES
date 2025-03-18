@@ -1,0 +1,43 @@
+Tue Mar 18 2025
+
+Some possible term-rewriting rules to paint a canvas:
+
+  Paint[
+    Chunk[
+      Seq[Run[L -> Succ]]
+      Length[5]
+      FirstItem[a]]
+    Blank]
+
+should reduce to something like:
+
+  Painted[Seq[a b c d e]]
+
+Some rules that might accomplish the painting:
+
+     Paint[Chunk[FirstItem[X] ...α] Seq[_ ...β]]
+  -> Paint[Chunk[...α]              Seq[X ...β]]
+
+  Notice that FirstItem is removed, indicating that this part of the job
+  is done.
+
+     Paint[Chunk[Length[N] ...α] Blank]
+  -> Paint[Chunk[...α]           Seq(repeat _ N)]
+
+     Paint[Chunk[Seq[Run[RULE]] ...α] Seq[...β _ L ...γ]]
+  -> Paint[          ''               Seq[...β FillPairFromRun[RULE 'L L] ...γ]]
+
+  Notice that the first L is quoted. What we really need here is a fresh variable.
+  Maybe (fresh 'L) would do it
+
+     FillPairFromRun[L -> R[L] X Y]
+  -> Seq[X Y] substitute SubstFromRule[R[X] -> Y]
+
+  Notice that we need a special operator, 'substitute', that calls a function
+  that's "under the hood" of the term-rewriting system.
+
+     SubstFromRule[RULE]
+  -> pmatch(R compatibleRule(R))
+
+  Notice two more under-the-hood function calls. SubstFromRule reduces to a
+  substitution, i.e. a function mapping variables to values.
