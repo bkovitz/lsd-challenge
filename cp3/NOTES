@@ -1,3 +1,31 @@
+Wed Mar 19 2025
+
+A tiny term-rewriting system that does nothing but complete the New World in
+the pons asinorum. It should reduce this:
+
+  NewWorld[Seq[i j k] Blank]
+
+to this:
+
+  NewWorld[Seq[i j k] Seq[i j l]]
+
+and it should work for any successor run, starting from any letter and running
+any number of positions. For anything else, though, it should fail to reduce.
+
+  NewWorld[Run[...α] Blank] -> NewWorld[Run[...α] AdvanceLast[...α]]
+
+  Seq[A Succ[A] ...α] -> Seq[Run[A Succ[A]] ...α]
+
+  Seq[Run[...α A] Succ[A] ...β] -> Seq[Run[...α A Succ[A]] ...β]
+
+  Seq[Run[...α]] -> Run[...α]
+
+  AdvanceLast[...α A] -> AdvanceLast[...α Succ[A]]
+
+We might need to say $Succ[A] in the lhs of the rules above, because we need to
+force a reduction from whatever letter is there to Succ[A].
+
+
 Tue Mar 18 2025
 
 Some possible term-rewriting rules to paint a canvas:
