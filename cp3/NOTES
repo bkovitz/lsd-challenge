@@ -20,7 +20,7 @@ any number of positions. For anything else, though, it should fail to reduce.
 
   Seq[Run[...α]] -> Run[...α]
 
-  AdvanceLast[...α A] -> AdvanceLast[...α Succ[A]]
+  AdvanceLast[...α A] -> Seq[...α Succ[A]]
 
 We might need to say $Succ[A] in the lhs of the rules above, because we need to
 force a reduction from whatever letter is there to Succ[A].
