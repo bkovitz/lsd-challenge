@@ -93,6 +93,13 @@ def as_name(x):
     except AttributeError:
         return str(x)
 
+def as_stripped_lines(text: str) -> Iterable[str]:
+    for line in text.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        yield line
+
 ### Simple predicates
 
 def is_iter(o: Any) -> bool:
