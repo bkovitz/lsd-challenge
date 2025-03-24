@@ -6,7 +6,7 @@ PY = python3.12
 ut:
 	$(PY) -m unittest -v testTRS.py #Model.py
 ut1:	
-	$(PY) -m unittest Model.TestChunk.test_regen_cba
+	$(PY) -m unittest testTRS.TestTRS.test_pmatch_A_A_x_x
 
 tags:
 	ctags *.py

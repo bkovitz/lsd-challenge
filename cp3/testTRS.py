@@ -62,9 +62,51 @@ class TestTRS(unittest.TestCase):
             as_term('Seq[x]')
         )
 
-    # TODO test exception when Subst fails
+    # TODO test exception when Subst fails?
     # TODO test ...V
     # TODO test $Succ[A]
+
+    def test_pmatch_x_x(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('x'), as_term('x')),
+            Subst.empty
+        )
+
+    def test_pmatch_x_y(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('x'), as_term('y')),
+            Subst.bottom
+        )
+
+    def test_pmatch_A_A(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('A'), as_term('A')),
+            Subst.empty
+        )
+        
+    def test_pmatch_A_x(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('A'), as_term('x')),
+            Subst.from_tups(('A', 'x'))
+        )
+
+    def test_pmatch_(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[A B]'), as_term('Seq[x y]')),
+            Subst.from_tups(('A', 'x'), ('B', 'y'))
+        )
+
+    def test_pmatch_A_A_x_x(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[A A]'), as_term('Seq[x x]')),
+            Subst.from_tups(('A', 'x'))
+        )
+        
+    def test_pmatch_A_A_x_y(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[A A]'), as_term('Seq[x y]')),
+            Subst.bottom
+        )
 
     """
     def test_pmatch(self) -> None:

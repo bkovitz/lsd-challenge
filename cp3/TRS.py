@@ -190,8 +190,36 @@ class Subst:
             case _:
                 raise NotImplementedError
 
+    def pmatch(self, lhs: Term, rhs: Term) -> Subst:
+        if lhs == rhs:
+            return self
+        match (lhs, rhs):
+            case (Variable(), _):
+                if lhs in self.d:
+                    return self.pmatch(self.d[lhs], rhs)
+                else:
+                    return Subst(self.d.set(lhs, rhs))
+            case (Term(left_head, left_args), Term(right_head, right_args)):
+                result = self.pmatch(left_head, right_head)
+                for l, r in zip(left_args, right_args):
+                    result = result.pmatch(l, r)
+                return result
+            case _:
+                return Subst.bottom
+
+class BottomSubst(Subst):
+
+    def __str__(self) -> str:
+        return 'BottomSubst'
+
+    __repr__ = __str__
+
+Subst.empty = Subst(pmap())
+Subst.bottom = BottomSubst()
+
+
 def pmatch(lhs: Term, rhs: Term) -> Subst:
-    pass
+    return Subst.empty.pmatch(lhs, rhs)
 
 @dataclass(frozen=True)
 class RewritingSystem:
@@ -211,4 +239,3 @@ if __name__ == '__main__':
 
     su = Subst.from_tups(('A', 'x'))
     print(su)
-
