@@ -183,3 +183,24 @@ class TestTRS(unittest.TestCase):
             trs.reduce(as_term('Seq[a x b c]')),
             as_term('GotIt[b c a]')
         )
+    
+    def test_rewrite_subexpression(self) -> None:
+        rules = '''
+        Succ[a] -> b
+        '''
+        trs = RewritingSystem(rules)
+        self.assertEqual(
+            trs.reduce(as_term('Seq[Succ[a] b c]')),
+            as_term('Seq[b b c]')
+        )
+
+    def test_rewrite_multistep(self) -> None:
+        rules = '''
+        Succ[a] -> b
+        Succ[b] -> c
+        '''
+        trs = RewritingSystem(rules)
+        self.assertEqual(
+            trs.reduce(as_term('Seq[a Succ[b] Succ[Succ[a]]]')),
+            as_term('Seq[a c c]')
+        )

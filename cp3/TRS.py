@@ -253,6 +253,7 @@ class Subst:
             case _:
                 raise NotImplementedError('eval', expr)
 
+    # TODO rename rhs -> expr
     def pmatch(self, lhs: Term, rhs: Term) -> Subst:
         if lhs == rhs:
             return self
@@ -375,9 +376,17 @@ class RewritingSystem:
 
     def reduce(self, e: Expr) -> Expr:
         for rule in self.rules:
+            # match rule.lhs:
+            #     case Term(head, args):
+            #         for arg in args:
+            #         if pmatch(rule.lhs, head):
             if (su := pmatch(rule.lhs, e)):
-                print('SU', su)
                 return su.eval(rule.rhs)
+        match e:
+            case Term(head, args):
+                reduced_args = tuple(self.reduce(arg) for arg in args)
+                if reduced_args != args:
+                    return self.reduce(Term(head, reduced_args))
         return e
 
     def __str__(self) -> str:
