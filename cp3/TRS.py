@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import re
-from typing import Dict, List, Tuple, Union, Optional, Set, Any
+from typing import Dict, List, Tuple, Union, Optional, Set, Any, Iterable
 from dataclasses import dataclass, field
 
 from lark import Lark, Transformer, v_args, Token
@@ -61,14 +61,14 @@ class DollarSymbol:
 @dataclass(frozen=True)
 class Term:
     head: Symbol | Variable | SeqVariable | DollarSymbol
-    args: Optional[Tuple[Term]] = None
+    args: Optional[Tuple[Term, ...]] = None
 
     def __str__(self) -> str:
         if self.args:
             args_str = ' '.join(str(arg) for arg in self.args)
             return f'{self.head}[{args_str}]'
         else:
-            return self.head
+            return str(self.head)
 
     def __repr__(self) -> str:
         if self.args:
@@ -77,7 +77,26 @@ class Term:
         else:
             return f'Term({self.head!r})'
 
-Expr = Symbol | Term | Variable | SeqVariable
+@dataclass(frozen=True)
+class TermWithSeqBody:
+    head: Symbol
+    args: Tuple[Expr, ...]
+
+    def __str__(self) -> str:
+        if self.args:
+            args_str = ' '.join(str(arg) for arg in self.args)
+            return f'{self.head}[{args_str}]'
+        else:
+            return str(self.head)
+
+    def __repr__(self) -> str:
+        if self.args:
+            args_str = ', '.join(repr(arg) for arg in self.args)
+            return f'Term({self.head!r}, [{args_str}])'
+        else:
+            return f'Term({self.head!r})'
+
+Expr = Symbol | Term | Variable | SeqVariable | TermWithSeqBody
 
 @dataclass(frozen=True)
 class Rule:
@@ -161,6 +180,25 @@ class Fizzle(Exception):
 class UndefinedVariable(Fizzle):
     pass
 
+class SeqVariableAfterSeqVariable(Exception):
+    pass
+
+@dataclass(frozen=True)
+class Splice:
+    elems: Tuple[Expr, ...]
+
+    def __init__(self, *elems: Expr):
+        force_setattr(self, 'elems', tuple(elems))
+
+def as_value(x: str | Splice) -> Value:
+    match x:
+        case str():
+            return as_term(x)
+        case Splice():
+            return x
+        case _:
+            return NotImplementedError
+
 @dataclass(frozen=True)
 class Subst:
     """A substitution: a function that maps variables to values."""
@@ -169,12 +207,16 @@ class Subst:
     @classmethod
     def from_tups(cls, *tups: Tuple(str, Any)) -> Subst:
         term_tups = [
-            (as_term(tup[0]), as_term(tup[1]))
+            #(as_term(tup[0]), as_term(tup[1]))
+            (as_term(tup[0]), as_value(tup[1]))
                 for tup in tups
         ]
         return cls(
             d=pmap(term_tups)
         )
+
+    def is_bottom(self) -> bool:
+        return False
 
     def eval(self, expr: Expr) -> Expr:
         match expr:
@@ -194,20 +236,71 @@ class Subst:
         if lhs == rhs:
             return self
         match (lhs, rhs):
-            case (Variable(), _):
+            case (var, _) if isinstance(var, (Variable, SeqVariable)):
                 if lhs in self.d:
                     return self.pmatch(self.d[lhs], rhs)
                 else:
                     return Subst(self.d.set(lhs, rhs))
             case (Term(left_head, left_args), Term(right_head, right_args)):
                 result = self.pmatch(left_head, right_head)
-                for l, r in zip(left_args, right_args):
-                    result = result.pmatch(l, r)
-                return result
+                return result.pmatch_seq(left_args, right_args, False,
+                    lambda su, new_rhs: su)
             case _:
                 return Subst.bottom
 
+    def pmatch_seq(
+        self,
+        lhs: Iterable[Expr],
+        rhs: Iterable[Expr],
+        after_seqvar: bool,
+        k: Callable[[Subst, Iterable[Expr]], Subst]
+    ) -> Subst:
+        print('PMATCH_SEQ', lhs, rhs, after_seqvar, k)
+        match lhs:
+            case ():
+                return k(self, rhs)
+            case (t, *lhs_rest) \
+            if isinstance(t, (Term, Variable)) and not after_seqvar:
+                # If Term or Variable, it must match first elem of rhs.
+                match rhs:
+                    case (x, *rhs_rest):
+                        return self.pmatch(t, x) \
+                                   .pmatch_seq(lhs_rest, rhs_rest, False, k)
+                    case ():
+                        return Subst.bottom
+            case (SeqVariable() as seqvar, *lhs_rest):
+                # If ...α, set after_seqvar and slurp up the entire rhs
+                # in the continuation.
+                if after_seqvar:
+                    raise SeqVariableAfterSeqVariable
+                return self.pmatch_seq(lhs_rest, rhs, True,
+                    lambda su, new_rhs:
+                        k(self.pmatch(seqvar, Splice(*new_rhs)), ()))
+            case (Term() as t, *lhs_rest) if after_seqvar:
+                # If ...α followed by Term: search ahead to match Term.
+                su, rhs_pre_term, rhs_post_term = \
+                    self.find_pmatch_in_seq(t, rhs)
+                return su.pmatch_seq(lhs_rest, rhs_post_term, false, k)
+            case (Variable() as var, *lhs_rest) if after_seqvar:
+                # If ...α followed by Variable: wait until the end and then
+                # match the last elem to the Variable.
+                return self.pmatch_seq(lhs_rest, rhs, true,
+                    lambda su, new_rhs: k(self.pmatch(var, new_rhs[:-1]),
+                                          new_rhs[:-1]))
+            case _:
+                raise NotImplementedError
+
+    def find_pmatch_in_seq(self, term: Term, seq: Iterable[Expr]) \
+    -> Tuple[Subst, Iterable[Expr], Iterable[Expr]]:
+        for i, elem in enumerate(seq):
+            if not (su := self.pmatch(term, elem)).is_bottom():
+                return su, seq[:i], seq[i+1:]
+        return Subst.bottom
+
 class BottomSubst(Subst):
+
+    def is_bottom(self) -> bool:
+        return True
 
     def __str__(self) -> str:
         return 'BottomSubst'
@@ -237,5 +330,8 @@ if __name__ == '__main__':
     got = parse_rule('A -> x')
     print(got)
 
-    su = Subst.from_tups(('A', 'x'))
-    print(su)
+    got = parse_rule('Seq[...A] -> Blah[...A]')
+    print(got)
+
+    #su = Subst.from_tups(('A', 'x'))
+    #print(su)

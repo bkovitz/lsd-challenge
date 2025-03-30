@@ -1,7 +1,7 @@
 import unittest
 
 from TRS import RewritingSystem, parse_rule, as_term, Rule, Term, Variable, \
-    DollarSymbol, Symbol, SeqVariable, pmatch, Subst
+    DollarSymbol, Symbol, SeqVariable, pmatch, Subst, Splice, TermWithSeqBody
 
 class TestTRS(unittest.TestCase):
     
@@ -48,6 +48,13 @@ class TestTRS(unittest.TestCase):
                         self.fail()
             case _:
                 self.fail()
+
+    # IDEA Don't make TermWithSeqBody. Just detect it in pmatch.
+    def xtest_parse_term_with_seq_var(self) -> None:
+        self.assertEqual(
+            as_term('Seq[...A]'),
+            TermWithSeqBody(Symbol('Seq'), (SeqVariable('...A')))
+        )
 
     def test_as_term(self) -> None:
         self.assertEqual(
@@ -106,6 +113,12 @@ class TestTRS(unittest.TestCase):
         self.assertEqual(
             pmatch(as_term('Seq[A A]'), as_term('Seq[x y]')),
             Subst.bottom
+        )
+
+    def test_pmatch_splice(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[...A]'), as_term('Seq[x y]')),
+            Subst.from_tups(('...A', Splice(as_term('x'), as_term('y'))))
         )
 
     """
