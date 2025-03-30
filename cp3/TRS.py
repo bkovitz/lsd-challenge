@@ -263,7 +263,6 @@ class Subst:
         after_seqvar: bool,
         k: Callable[[Subst, Iterable[Expr]], Subst]
     ) -> Subst:
-        #print('PMATCH_SEQ', lhs, rhs, after_seqvar, k)
         match lhs:
             case ():
                 return k(self, rhs)
@@ -282,7 +281,6 @@ class Subst:
                 if after_seqvar:
                     raise SeqVariableAfterSeqVariable  # not allowed
                 def pmatch_seqvar_to_whole_new_rhs(su, new_rhs):
-                    #print('SEQVAR', seqvar, new_rhs, su.pmatch(seqvar, Splice(*new_rhs)))
                     return k(su.pmatch(seqvar, Splice(*new_rhs)), ())
                 return self.pmatch_seq(lhs_rest, rhs, True,
                     pmatch_seqvar_to_whole_new_rhs)
@@ -291,7 +289,6 @@ class Subst:
                 # If ...α followed by Term: search ahead to match Term.
                 su, rhs_pre_term, rhs_post_term = \
                     self.find_pmatch_in_seq(t, rhs)
-                #print('FINDP', t, rhs_pre_term, rhs_post_term)
                 def continue_on_previous_rhs_segment(su, new_rhs):
                     return k(su, rhs_pre_term)
                 return su.pmatch_seq(lhs_rest, rhs_post_term, False,
@@ -301,12 +298,13 @@ class Subst:
                 # match the last elem to the Variable.
                 def pmatch_var_to_last_elem(su, new_rhs):
                     result = k(su.pmatch(var, new_rhs[-1]), new_rhs[:-1])
-                    #print('VARIABLE', var, repr(su.pmatch(var, new_rhs[-1])), new_rhs[:-1])
                     return result
                 return self.pmatch_seq(lhs_rest, rhs, True,
                     pmatch_var_to_last_elem)
             case _:
-                raise NotImplementedError('pmatch_seq', lhs, rhs, after_seqvar, k)
+                raise NotImplementedError(
+                    'pmatch_seq', lhs, rhs, after_seqvar, k
+                )
 
     def find_pmatch_in_seq(self, term: Term, seq: Iterable[Expr]) \
     -> Tuple[Subst, Iterable[Expr], Iterable[Expr]]:
