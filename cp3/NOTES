@@ -14,9 +14,9 @@ any number of positions. For anything else, though, it should fail to reduce.
 
   NewWorld[Run[...α] Blank] -> NewWorld[Run[...α] AdvanceLast[...α]]
 
-  Seq[A Succ[A] ...α] -> Seq[Run[A Succ[A]] ...α]
+  Seq[A $Succ[A] ...α] -> Seq[Run[A Succ[A]] ...α]
 
-  Seq[Run[...α A] Succ[A] ...β] -> Seq[Run[...α A Succ[A]] ...β]
+  Seq[Run[...α A] $Succ[A] ...β] -> Seq[Run[...α A Succ[A]] ...β]
 
   Seq[Run[...α]] -> Run[...α]
 
