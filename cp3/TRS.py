@@ -311,7 +311,7 @@ class Subst:
         for i, elem in enumerate(seq):
             if not (su := self.pmatch(term, elem)).is_bottom():
                 return su, seq[:i], seq[i+1:]
-        return Subst.bottom
+        return Subst.bottom, (), ()
 
     def __str__(self) -> str:
         pmap_str = ', '.join(f'{k} ↦ {v}' for k, v in self.d.items())
@@ -321,6 +321,22 @@ class BottomSubst(Subst):
 
     def is_bottom(self) -> bool:
         return True
+
+    def eval(self, expr: Expr) -> Expr:
+        # TODO What should eval on a bottom return?
+        raise NotImplementedError
+
+    def pmatch(self, lhs: Term, rhs: Term) -> Subst:
+        return self
+
+    def pmatch_seq(
+        self,
+        lhs: Iterable[Expr],
+        rhs: Iterable[Expr],
+        after_seqvar: bool,
+        k: Callable[[Subst, Iterable[Expr]], Subst]
+    ) -> Subst:
+        return self
 
     def __str__(self) -> str:
         return 'BottomSubst'

@@ -139,6 +139,12 @@ class TestTRS(unittest.TestCase):
             )
         )
 
+    def test_pmatch_splice_a_y_c_d(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[...A x ...B]'), as_term('Seq[a y c d]')),
+            Subst.bottom
+        )
+
     def test_pmatch_splice_a_b_s_e_q_c_d(self) -> None:
         self.assertEqual(
             pmatch(as_term('Seq[A B ...S C D]'), as_term('Seq[a b s e q c d]')),
