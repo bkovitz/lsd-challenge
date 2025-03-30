@@ -187,8 +187,16 @@ class SeqVariableAfterSeqVariable(Exception):
 class Splice:
     elems: Tuple[Expr, ...]
 
+    @classmethod
+    def from_text(cls, *args) -> Splice:
+        return Splice(*(as_term(a) for a in args))
+
     def __init__(self, *elems: Expr):
         force_setattr(self, 'elems', tuple(elems))
+
+    def __str__(self) -> str:
+        elems_str = ' '.join(str(e) for e in self.elems)
+        return f'Splice({elems_str})'
 
 def as_value(x: str | Splice) -> Value:
     match x:
@@ -255,7 +263,7 @@ class Subst:
         after_seqvar: bool,
         k: Callable[[Subst, Iterable[Expr]], Subst]
     ) -> Subst:
-        print('PMATCH_SEQ', lhs, rhs, after_seqvar, k)
+        #print('PMATCH_SEQ', lhs, rhs, after_seqvar, k)
         match lhs:
             case ():
                 return k(self, rhs)
@@ -272,21 +280,30 @@ class Subst:
                 # If ...α, set after_seqvar and slurp up the entire rhs
                 # in the continuation.
                 if after_seqvar:
-                    raise SeqVariableAfterSeqVariable
+                    raise SeqVariableAfterSeqVariable  # not allowed
+                def pmatch_seqvar_to_whole_new_rhs(su, new_rhs):
+                    #print('SEQVAR', seqvar, su.pmatch(seqvar, Splice(*new_rhs)))
+                    return k(su.pmatch(seqvar, Splice(*new_rhs)), ())
                 return self.pmatch_seq(lhs_rest, rhs, True,
-                    lambda su, new_rhs:
-                        k(self.pmatch(seqvar, Splice(*new_rhs)), ()))
+                    pmatch_seqvar_to_whole_new_rhs)
+#                    lambda su, new_rhs:
+#                        k(su.pmatch(seqvar, Splice(*new_rhs)), ()))
             case (Term() as t, *lhs_rest) if after_seqvar:
                 # If ...α followed by Term: search ahead to match Term.
                 su, rhs_pre_term, rhs_post_term = \
                     self.find_pmatch_in_seq(t, rhs)
-                return su.pmatch_seq(lhs_rest, rhs_post_term, false, k)
+                return su.pmatch_seq(lhs_rest, rhs_post_term, False, k)
             case (Variable() as var, *lhs_rest) if after_seqvar:
                 # If ...α followed by Variable: wait until the end and then
                 # match the last elem to the Variable.
-                return self.pmatch_seq(lhs_rest, rhs, true,
-                    lambda su, new_rhs: k(self.pmatch(var, new_rhs[:-1]),
-                                          new_rhs[:-1]))
+                def pmatch_var_to_last_elem(su, new_rhs):
+                    result = k(su.pmatch(var, new_rhs[-1]), new_rhs[:-1])
+                    #print('VARIABLE', var, repr(su.pmatch(var, new_rhs[-1])), new_rhs[:-1])
+                    return result
+                return self.pmatch_seq(lhs_rest, rhs, True,
+                    pmatch_var_to_last_elem)
+#                    lambda su, new_rhs: k(su.pmatch(var, new_rhs[-1]),
+#                                          new_rhs[:-1]))
             case _:
                 raise NotImplementedError
 
@@ -296,6 +313,10 @@ class Subst:
             if not (su := self.pmatch(term, elem)).is_bottom():
                 return su, seq[:i], seq[i+1:]
         return Subst.bottom
+
+    def __str__(self) -> str:
+        pmap_str = ', '.join(f'{k} ↦ {v}' for k, v in self.d.items())
+        return f'Subst({pmap_str})'
 
 class BottomSubst(Subst):
 

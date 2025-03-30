@@ -118,7 +118,16 @@ class TestTRS(unittest.TestCase):
     def test_pmatch_splice(self) -> None:
         self.assertEqual(
             pmatch(as_term('Seq[...A]'), as_term('Seq[x y]')),
-            Subst.from_tups(('...A', Splice(as_term('x'), as_term('y'))))
+            Subst.from_tups(('...A', Splice.from_text('x', 'y')))
+        )
+
+    def test_pmatch_splice_B(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[...A B]'), as_term('Seq[e f g]')),
+            Subst.from_tups(
+                ('...A', Splice.from_text('e', 'f')),
+                ('B', 'g')
+            )
         )
 
     """
