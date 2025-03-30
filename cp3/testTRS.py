@@ -130,16 +130,25 @@ class TestTRS(unittest.TestCase):
             )
         )
 
-    """
+    def test_pmatch_splice_a_x_c_d(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[...A x ...B]'), as_term('Seq[a x c d]')),
+            Subst.from_tups(
+                ('...A', Splice.from_text('a')),
+                ('...B', Splice.from_text('c', 'd'))
+            )
+        )
+
     def test_pmatch(self) -> None:
         self.assertEqual(
             pmatch(
                 as_term('Seq[A A]'),
                 as_term('Seq[x x]')
-            )
+            ),
             Subst.from_tups(('A', 'x'))
         )
 
+    """
     def test_rewrite(self) -> None:
         rules = '''
         Succ[a] -> b

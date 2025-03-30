@@ -268,7 +268,7 @@ class Subst:
             case ():
                 return k(self, rhs)
             case (t, *lhs_rest) \
-            if isinstance(t, (Term, Variable)) and not after_seqvar:
+            if isinstance(t, (Term, Symbol, Variable)) and not after_seqvar:
                 # If Term or Variable, it must match first elem of rhs.
                 match rhs:
                     case (x, *rhs_rest):
@@ -282,17 +282,20 @@ class Subst:
                 if after_seqvar:
                     raise SeqVariableAfterSeqVariable  # not allowed
                 def pmatch_seqvar_to_whole_new_rhs(su, new_rhs):
-                    #print('SEQVAR', seqvar, su.pmatch(seqvar, Splice(*new_rhs)))
+                    #print('SEQVAR', seqvar, new_rhs, su.pmatch(seqvar, Splice(*new_rhs)))
                     return k(su.pmatch(seqvar, Splice(*new_rhs)), ())
                 return self.pmatch_seq(lhs_rest, rhs, True,
                     pmatch_seqvar_to_whole_new_rhs)
-#                    lambda su, new_rhs:
-#                        k(su.pmatch(seqvar, Splice(*new_rhs)), ()))
-            case (Term() as t, *lhs_rest) if after_seqvar:
+            case (t, *lhs_rest) \
+            if isinstance(t, (Term, Symbol)) and after_seqvar:
                 # If ...α followed by Term: search ahead to match Term.
                 su, rhs_pre_term, rhs_post_term = \
                     self.find_pmatch_in_seq(t, rhs)
-                return su.pmatch_seq(lhs_rest, rhs_post_term, False, k)
+                #print('FINDP', t, rhs_pre_term, rhs_post_term)
+                def continue_on_previous_rhs_segment(su, new_rhs):
+                    return k(su, rhs_pre_term)
+                return su.pmatch_seq(lhs_rest, rhs_post_term, False,
+                    continue_on_previous_rhs_segment)
             case (Variable() as var, *lhs_rest) if after_seqvar:
                 # If ...α followed by Variable: wait until the end and then
                 # match the last elem to the Variable.
@@ -302,10 +305,8 @@ class Subst:
                     return result
                 return self.pmatch_seq(lhs_rest, rhs, True,
                     pmatch_var_to_last_elem)
-#                    lambda su, new_rhs: k(su.pmatch(var, new_rhs[-1]),
-#                                          new_rhs[:-1]))
             case _:
-                raise NotImplementedError
+                raise NotImplementedError('pmatch_seq', lhs, rhs, after_seqvar, k)
 
     def find_pmatch_in_seq(self, term: Term, seq: Iterable[Expr]) \
     -> Tuple[Subst, Iterable[Expr], Iterable[Expr]]:
