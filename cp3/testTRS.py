@@ -166,11 +166,20 @@ class TestTRS(unittest.TestCase):
             Subst.from_tups(('A', 'x'))
         )
 
-    """
-    def test_rewrite(self) -> None:
+    def test_rewrite_succ(self) -> None:
         rules = '''
         Succ[a] -> b
         '''
         trs = RewritingSystem(rules)
-        print(trs)
-    """
+        self.assertEqual(trs.reduce(as_term('Succ[a]')), as_term('b'))
+
+    def test_rewrite_with_vars(self) -> None:
+        rules = '''
+        Succ[a] -> b
+        Seq[A x ...S] -> GotIt[...S A]
+        '''
+        trs = RewritingSystem(rules)
+        self.assertEqual(
+            trs.reduce(as_term('Seq[a x b c]')),
+            as_term('GotIt[b c a]')
+        )

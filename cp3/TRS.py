@@ -226,19 +226,32 @@ class Subst:
     def is_bottom(self) -> bool:
         return False
 
+    def __bool__(self) -> bool:
+        """Not a bottom Subst, so true. No failure has occurred--even
+        though the Subst might be empty."""
+        return True
+
     def eval(self, expr: Expr) -> Expr:
         match expr:
             case Symbol():
                 return expr
-            case Variable():
+            case v if isinstance(v, (Variable, SeqVariable)):
                 try:
                     return self.d[expr]
                 except KeyError:
                     raise UndefinedVariable(expr)
             case Term(head, args):
-                return Term(head, tuple(self.eval(arg) for arg in args))
+                #return Term(head, tuple(self.eval(arg) for arg in args))
+                result_args = []
+                for arg in args:
+                    y = self.eval(arg)
+                    if isinstance(y, Splice):
+                        result_args += list(y.elems)
+                    else:
+                        result_args.append(y)
+                return Term(head, tuple(result_args))
             case _:
-                raise NotImplementedError
+                raise NotImplementedError('eval', expr)
 
     def pmatch(self, lhs: Term, rhs: Term) -> Subst:
         if lhs == rhs:
@@ -322,6 +335,9 @@ class BottomSubst(Subst):
     def is_bottom(self) -> bool:
         return True
 
+    def __bool__(self) -> bool:
+        return False
+
     def eval(self, expr: Expr) -> Expr:
         # TODO What should eval on a bottom return?
         raise NotImplementedError
@@ -356,6 +372,13 @@ class RewritingSystem:
 
     def __init__(self, rules_text: str):
         force_setattr(self, 'rules', list(parse_rules(rules_text)))
+
+    def reduce(self, e: Expr) -> Expr:
+        for rule in self.rules:
+            if (su := pmatch(rule.lhs, e)):
+                print('SU', su)
+                return su.eval(rule.rhs)
+        return e
 
     def __str__(self) -> str:
         rules_str = '\n  '.join(str(rule) for rule in self.rules)
