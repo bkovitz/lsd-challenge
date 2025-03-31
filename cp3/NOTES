@@ -1,3 +1,28 @@
+Mon Mar 31 2025
+
+A possible new syntax for sequence variables, borrowed from syntax-rules
+macros in Scheme (fully explained here:
+https://scheme.com/tspl4/syntax.html#./syntax:h2):
+
+  Succ[Seq[ARG ...]] -> Seq[Succ[ARG] ...]
+
+This rule would perform this reduction in one step:
+
+  Succ[Seq[a b c]] => Seq[Succ[a] Succ[b] Succ[c]]
+
+Separating the ellipsis from the variable name has the advantage that even
+in the lhs, it can match repeating structures of any complexity. For example,
+this rule:
+
+  Seq[Succ[ARG] ...] -> Seq[Undo[ARG] ...]
+
+would perform this reduction in one step:
+
+  Seq[Succ[a] Succ[b] Succ[c]] => Seq[Undo[a] Undo[b] Undo[c]]
+
+but its lhs would not match Seq[Pred[a] Pred[b] Pred[c]].
+
+
 Wed Mar 19 2025
 
 A tiny term-rewriting system that does nothing but complete the New World in
