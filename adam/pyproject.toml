@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+testpaths = "."
+
+python_files = "test_*.py"
+
+python_functions = ["test_*"]
+
+markers = [
+    "unit: mark a test as a unit test",
+    "integration: mark a test as an integration test",
+    "slow: mark a test as slow"
+]
+
+addopts = "-v --color=yes --exitfirst --doctest-modules"
+
+# minversion = "3.13"
+
+norecursedirs = ["venv", ".venv", "__pycache__", "*.egg-info"]
+
+log_cli = true
+log_cli_level = "INFO"
+
