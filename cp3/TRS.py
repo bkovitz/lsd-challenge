@@ -254,26 +254,35 @@ class Subst:
                 raise NotImplementedError('eval', expr)
 
     # TODO rename rhs -> expr
-    def pmatch(self, lhs: Term, rhs: Term) -> Subst:
+    def pmatch(self, lhs: Term, rhs: Term, rules: Optional[RewritingSystem] = None) -> Subst:
         if lhs == rhs:
             return self
         match (lhs, rhs):
             case (var, _) if isinstance(var, (Variable, SeqVariable)):
                 if lhs in self.d:
-                    return self.pmatch(self.d[lhs], rhs)
+                    return self.pmatch(self.d[lhs], rhs, rules)
                 else:
                     return Subst(self.d.set(lhs, rhs))
+            case (Term(DollarSymbol(dollar_name), dollar_args), _):
+                t = self.eval(Term(Symbol(dollar_name), dollar_args))
+                reduced = rules.reduce(t)
+                return self.pmatch(reduced, rhs, rules)
             case (Term(left_head, left_args), Term(right_head, right_args)):
-                result = self.pmatch(left_head, right_head)
-                return result.pmatch_seq(left_args, right_args, False,
+                result = self.pmatch(left_head, right_head, rules)
+                return result.pmatch_seq(left_args, right_args, rules, False,
                     lambda su, new_rhs: su)
+            #case (DollarSymbol(lhs_name), _):
+                
+                
             case _:
                 return Subst.bottom
+
 
     def pmatch_seq(
         self,
         lhs: Iterable[Expr],
         rhs: Iterable[Expr],
+        rules: Optional[RewritingSystem],
         after_seqvar: bool,
         k: Callable[[Subst, Iterable[Expr]], Subst]
     ) -> Subst:
@@ -285,8 +294,8 @@ class Subst:
                 # If Term or Variable, it must match first elem of rhs.
                 match rhs:
                     case (x, *rhs_rest):
-                        return self.pmatch(t, x) \
-                                   .pmatch_seq(lhs_rest, rhs_rest, False, k)
+                        return self.pmatch(t, x, rules) \
+                                   .pmatch_seq(lhs_rest, rhs_rest, rules, False, k)
                     case ():
                         return Subst.bottom
             case (SeqVariable() as seqvar, *lhs_rest):
@@ -295,17 +304,17 @@ class Subst:
                 if after_seqvar:
                     raise SeqVariableAfterSeqVariable  # not allowed
                 def pmatch_seqvar_to_whole_new_rhs(su, new_rhs):
-                    return k(su.pmatch(seqvar, Splice(*new_rhs)), ())
-                return self.pmatch_seq(lhs_rest, rhs, True,
+                    return k(su.pmatch(seqvar, Splice(*new_rhs), rules), ())
+                return self.pmatch_seq(lhs_rest, rhs, rules, True,
                     pmatch_seqvar_to_whole_new_rhs)
             case (t, *lhs_rest) \
             if isinstance(t, (Term, Symbol)) and after_seqvar:
                 # If ...α followed by Term: search ahead to match Term.
                 su, rhs_pre_term, rhs_post_term = \
-                    self.find_pmatch_in_seq(t, rhs)
+                    self.find_pmatch_in_seq(t, rhs, rules)
                 def continue_on_previous_rhs_segment(su, new_rhs):
                     return k(su, rhs_pre_term)
-                return su.pmatch_seq(lhs_rest, rhs_post_term, False,
+                return su.pmatch_seq(lhs_rest, rhs_post_term, rules, False,
                     continue_on_previous_rhs_segment)
             case (Variable() as var, *lhs_rest) if after_seqvar:
                 # If ...α followed by Variable: wait until the end and then
@@ -313,17 +322,17 @@ class Subst:
                 def pmatch_var_to_last_elem(su, new_rhs):
                     result = k(su.pmatch(var, new_rhs[-1]), new_rhs[:-1])
                     return result
-                return self.pmatch_seq(lhs_rest, rhs, True,
+                return self.pmatch_seq(lhs_rest, rhs, rules, True,
                     pmatch_var_to_last_elem)
             case _:
                 raise NotImplementedError(
-                    'pmatch_seq', lhs, rhs, after_seqvar, k
+                    'pmatch_seq', lhs, rhs, rules, after_seqvar, k
                 )
 
-    def find_pmatch_in_seq(self, term: Term, seq: Iterable[Expr]) \
+    def find_pmatch_in_seq(self, term: Term, seq: Iterable[Expr], rules: Optional[RewritingSystem] = None) \
     -> Tuple[Subst, Iterable[Expr], Iterable[Expr]]:
         for i, elem in enumerate(seq):
-            if not (su := self.pmatch(term, elem)).is_bottom():
+            if not (su := self.pmatch(term, elem, rules)).is_bottom():
                 return su, seq[:i], seq[i+1:]
         return Subst.bottom, (), ()
 
@@ -343,13 +352,14 @@ class BottomSubst(Subst):
         # TODO What should eval on a bottom return?
         raise NotImplementedError
 
-    def pmatch(self, lhs: Term, rhs: Term) -> Subst:
+    def pmatch(self, lhs: Term, rhs: Term, rules: Optional[RewritingSystem] = None) -> Subst:
         return self
 
     def pmatch_seq(
         self,
         lhs: Iterable[Expr],
         rhs: Iterable[Expr],
+        rules: Optional[RewritingSystem],
         after_seqvar: bool,
         k: Callable[[Subst, Iterable[Expr]], Subst]
     ) -> Subst:
@@ -364,8 +374,8 @@ Subst.empty = Subst(pmap())
 Subst.bottom = BottomSubst()
 
 
-def pmatch(lhs: Term, rhs: Term) -> Subst:
-    return Subst.empty.pmatch(lhs, rhs)
+def pmatch(lhs: Term, rhs: Term, rules: Optional[RewritingSystem] = None) -> Subst:
+    return Subst.empty.pmatch(lhs, rhs, rules)
 
 @dataclass(frozen=True)
 class RewritingSystem:
@@ -380,7 +390,7 @@ class RewritingSystem:
             #     case Term(head, args):
             #         for arg in args:
             #         if pmatch(rule.lhs, head):
-            if (su := pmatch(rule.lhs, e)):
+            if (su := pmatch(rule.lhs, e, self)):
                 return su.eval(rule.rhs)
         match e:
             case Term(head, args):
