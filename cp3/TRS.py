@@ -263,10 +263,12 @@ class Subst:
                     return self.pmatch(self.d[lhs], rhs, rules)
                 else:
                     return Subst(self.d.set(lhs, rhs))
-            case (Term(DollarSymbol(dollar_name), dollar_args), _):
-                t = self.eval(Term(Symbol(dollar_name), dollar_args))
-                reduced = rules.reduce(t)
-                return self.pmatch(reduced, rhs, rules)
+#            case (Term(DollarSymbol(dollar_name), dollar_args), _):
+#                def resolve_dollar(su):
+#                    t = su.eval(Term(Symbol(dollar_name), dollar_args))
+#                    reduced = rules.reduce(t)
+#                    return su.pmatch(reduced, rhs, rules)
+#                return k(
             case (Term(left_head, left_args), Term(right_head, right_args)):
                 result = self.pmatch(left_head, right_head, rules)
                 return result.pmatch_seq(left_args, right_args, rules, False,

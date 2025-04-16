@@ -219,3 +219,20 @@ class TestTRS(unittest.TestCase):
             Subst.from_tups(('A', 'a'))
 
         )
+
+    def test_dollar_sign2(self) -> None:
+
+        rules = '''
+        Succ[a] -> b
+        Succ[b] -> c
+        '''
+        trs = RewritingSystem(rules)
+        self.assertEqual(
+            pmatch(
+                as_term('Seq[$Succ[A] A]'),
+                as_term('Seq[b a]'),
+                trs
+            ),
+            Subst.from_tups(('A', 'a'))
+
+        )
