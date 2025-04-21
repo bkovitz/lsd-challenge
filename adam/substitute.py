@@ -24,4 +24,4 @@ def substitute(term: Term, env: Env) -> Term:
             return Seq(substitute(t, env) for t in items)
 
         case _:
-            return term
+            return term  # Symbol, int, etc.

@@ -112,5 +112,6 @@ def pmatch_var(pattern: Var, template: Term, env: Env) -> Env | None:
             elif template.head != g:
                 return None
 
+        print("guard", pattern.guard, "template", template)
         env[pattern.name] = Seq((template,)) if pattern.many else template
         return env

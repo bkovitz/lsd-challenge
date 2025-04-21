@@ -1,6 +1,18 @@
 from term import Node, Rule, Term, Var
 
 
+def is_ground(term: Term) -> bool:
+    match term:
+        case Var():
+            return False
+        case Rule(lhs, rhs):
+            return is_ground(lhs) and is_ground(rhs)
+        case Node(head, args):
+            return is_ground(head) and all(is_ground(arg) for arg in args)
+        case _:
+            return True
+
+
 def split_at_depth(s: str, sep: str = " ") -> list[str]:
     """
     Splits a string by separator (not between brackets). Useful for parsing.
@@ -39,15 +51,3 @@ def split_at_depth(s: str, sep: str = " ") -> list[str]:
         parts.append("".join(buf).strip())
 
     return parts
-
-
-def is_ground(term: Term) -> bool:
-    match term:
-        case Var():
-            return False
-        case Rule(lhs, rhs):
-            return is_ground(lhs) and is_ground(rhs)
-        case Node(head, args):
-            return is_ground(head) and all(is_ground(arg) for arg in args)
-        case _:
-            return True

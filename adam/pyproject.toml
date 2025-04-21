@@ -1,22 +1,72 @@
+[project]
+name = "lsd"
+version = "0.0.2"
+description = "Solving the letter-string domain with term-rewriting."
+authors = ["Adam <you@example.com>"]
+requires-python = ">=3.12"
+dependencies = []
+
 [tool.pytest.ini_options]
-testpaths = "."
-
+pythonpath = ["."]
+testpaths = ["tests"]
 python_files = "test_*.py"
-
 python_functions = ["test_*"]
+addopts = "-v --color=yes --exitfirst --doctest-modules -vv"  # Uncomment for coverage: --cov=lsd --cov-report=term-missing"
+minversion = "3.12"
+norecursedirs = ["venv", ".venv", "__pycache__", "*.egg-info", "notes"]
+log_cli = true
+log_format = "%(message)s"
 
-markers = [
-    "unit: mark a test as a unit test",
-    "integration: mark a test as an integration test",
-    "slow: mark a test as slow"
+[tool.pyright]
+include = ["src/lsd", "tests"]
+extraPaths = ["src"]
+# typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+[tool.coverage.run]
+branch = true
+source = ["src/lsd"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+# fail_under = 50
+
+[tool.sphinx]
+source-dir = "docs"
+output-dir = "docs/_build/html"
+master-doc = "index"
+project = "lsd"
+release = "0.1.1"
+author = "Adam"
+
+extensions = [
+  "sphinx.ext.autodoc",
+  "sphinx.ext.napoleon",
+  "sphinx.ext.intersphinx",
+  "sphinx_git"
 ]
 
-addopts = "-v --color=yes --exitfirst --doctest-modules"
+html_theme = "furo"
+source_suffix = [".rst", ".md"]
 
-# minversion = "3.13"
+<<<<<<< HEAD
+[tool.sphinx.html_theme_options]
+sidebar_hide_name = false
+=======
+minversion = "3.13"
+>>>>>>> parent of 15f09df (add commets)
 
-norecursedirs = ["venv", ".venv", "__pycache__", "*.egg-info"]
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
 
-log_cli = true
-log_cli_level = "INFO"
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+include = '\.pyi?$'
 
+[tool.flake8]
+max-line-length = 100
+exclude = ".venv,__pycache__,build,dist,htmlcov"
