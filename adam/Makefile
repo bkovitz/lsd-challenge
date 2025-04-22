@@ -6,7 +6,6 @@ PY = python3.13
 all: test coverage types docs
 
 test:
-<<<<<<< HEAD
 	pytest .
 
 coverage: test
@@ -23,15 +22,14 @@ docs: types
 
 docs-auto:
 	sphinx-autobuild docs docs/_build/html
+
 format:
 	isort ./lsd
 	black ./lsd
 
-=======
-	$(PY) -m pytest *.py
->>>>>>> parent of 15f09df (add commets)
 ut:
 	$(PY) -m unittest -v test_*.py --failfast
+
 ut1:	
 	$(PY) -m unittest testTRS.TestTRS.test_rewrite_subexpression
 
@@ -42,7 +40,6 @@ clean:
 	find . -name "__pycache__" -type d -exec rm -r {} +
 	find . -name "*.pyc" -delete
 	rm -rf .pytest_cache/
-
 
 zip: clean
 	zip -r lsd.zip lsd/ tests/ Makefile pyproject.toml readme.org shell.nix todo.org

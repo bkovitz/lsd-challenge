@@ -5,27 +5,19 @@ let
 
 in pkgs.mkShell {
   packages = with pkgs; [
-<<<<<<< HEAD:adam/shell.nix
+    pyright
     python312
+    python312Packages.nltk
+    python312Packages.pylev
     python312Packages.pytest
     python312Packages.pytest-cov
-=======
-    python313
->>>>>>> parent of 15f09df (add commets):shell.nix
     python3Packages.ipython
-    python312Packages.pylev
-    python312Packages.nltk
     python3Packages.lark
-    python3Packages.streamlit
     python3Packages.pyrsistent
     python3Packages.pytest-sugar
-<<<<<<< HEAD:adam/shell.nix
+    python3Packages.streamlit
     python3Packages.tabulate
     sphinx
-
-=======
->>>>>>> parent of 15f09df (add commets):shell.nix
-    pyright
   ];
   shellHook = ''
     # create the virtual environment if it doesn't exist

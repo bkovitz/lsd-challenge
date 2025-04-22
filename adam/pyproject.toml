@@ -51,12 +51,8 @@ extensions = [
 html_theme = "furo"
 source_suffix = [".rst", ".md"]
 
-<<<<<<< HEAD
 [tool.sphinx.html_theme_options]
 sidebar_hide_name = false
-=======
-minversion = "3.13"
->>>>>>> parent of 15f09df (add commets)
 
 [tool.isort]
 profile = "black"
