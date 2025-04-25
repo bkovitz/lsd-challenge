@@ -45,7 +45,10 @@ def print_cantor(steps: int = 4) -> None:
 
 
 def test_print() -> None:
-    print_cantor(steps=4)
+    for n in range(1, 5):
+        print()
+        print(f"Cantor set {n=}:")
+        print_cantor(steps=n)
 
 
 if __name__ == "__main__":

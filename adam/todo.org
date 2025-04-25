@@ -1,9 +1,0 @@
-* TODO
-- [ ] Wildcard support: Allow `_` to match anything without binding.
-- [ ] Constraint expressions: Support callables or lambdas as guards.
-- [ ] Backtracking matcher: Yield all possible matching environments.
-- [ ] Rule priorities: Enable prioritized or weighted pattern matches.
-- [ ] Pattern classes: Create reusable matchers with embedded rules.
-- [ ] Custom guard decorators: e.g. @guard(lambda t: isinstance(t, int) and t > 0)
-- [ ] Match diagnostics: Return a reason for failure (e.g. guard mismatch, wrong arity).
-- [ ] Rewrite strategies: Support top-down, bottom-up, and parallel rule applications.

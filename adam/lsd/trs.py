@@ -3,13 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from lsd.logger import get_logger
 from lsd.method import Method, MethodRule, get_methods
 from lsd.parser import parse_ensure
 from lsd.rules import get_rules
 from lsd.term import Node, Rule, Seq, Term, TermRule
-
-logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -29,8 +26,10 @@ class TermRewriteSystem:
     _rules: list[Rule]
     trace: list[RewriteStep]
 
-    def __init__(self):
+    def __init__(self, rules: list[Rule] = []):
         self.reset()
+        for rule in rules:
+            self.add_rule(rule)
 
     def reset(self) -> None:
         """

@@ -4,16 +4,17 @@ Run with:
     python -m lsd.other.koch
 """
 
-from lsd.term.seq import Seq
+from lsd.term import Seq, TermRule
 from lsd.trs import TermRewriteSystem
 
 
 def generate_koch_seq(steps: int, axiom: Seq = Seq("F")) -> Seq:
-    trs = TermRewriteSystem()
-    trs.add_rule("F", Seq(*"F+F-F-F+F"))
-    seq = axiom
-    for _ in range(steps):
-        seq = trs.rewrite_once(seq)
+    trs = TermRewriteSystem(
+        rules=[
+            TermRule("F", Seq(*"F+F-F-F+F")),
+        ]
+    )
+    seq = trs.rewrite(axiom, steps)
     assert isinstance(seq, Seq)
     return seq
 
@@ -49,7 +50,10 @@ def print_koch(steps: int = 4) -> None:
 
 
 def test_print() -> None:
-    print_koch(steps=5)
+    for n in range(1, 6):
+        print()
+        print(f"Koch curve {n=}:")
+        print_koch(steps=n)
 
 
 if __name__ == "__main__":

@@ -3,14 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, NamedTuple, Optional, Protocol, Type, Union
 
-from lsd.logger import get_logger
-
 from .node import Node
 from .seq import Seq
 from .term import TermBase
 from .types import Guard
-
-logger = get_logger(__name__)
 
 
 class Span(NamedTuple):

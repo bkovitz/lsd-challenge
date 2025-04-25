@@ -3,14 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Optional
 
-from lsd.logger import get_logger
-from lsd.term.wildcard import Wildcard
-
 from .env import Env
-from .term import Node, Seq, Term, Var
-
-# Initialize logger for debugging purposes
-logger = get_logger(__name__)
+from .term import Node, Seq, Term, Var, Wildcard
 
 
 def match_pattern(
@@ -70,7 +64,6 @@ def _match_var(
     Returns:
         Optional[Env]: The updated environment if successful, or None if matching fails.
     """
-    logger.debug(f"matching var {pattern} with {target}")
 
     # 1) Guard check: ensure the value meets the variable's guard conditions
     if pattern.guards and not pattern.check_value(target):

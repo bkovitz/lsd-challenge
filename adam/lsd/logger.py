@@ -51,7 +51,7 @@ class ColorLogger(logging.Logger):
 logging.setLoggerClass(ColorLogger)
 
 
-def get_logger(name: str, level: int = logging.DEBUG, prefix: str = "[LSD]") -> ColorLogger:
+def get_logger(name=__name__, level=logging.DEBUG, prefix="[LSD]"):
     """
     Gets a logger instance with colorized output.
 

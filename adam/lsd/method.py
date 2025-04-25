@@ -3,12 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Optional
 
-import lsd.util.check as check
-from lsd.logger import get_logger
-from lsd.term import Node, Rule, Term, TermBase, Var
-
-# Initialize logger for debugging purposes
-logger = get_logger(__name__)
+from .term import Node, Rule, Term, TermBase, Var
+from .util import check
 
 
 @dataclass(frozen=True)
@@ -122,10 +118,8 @@ class MethodRule(Rule):
         # Try to apply the method
         try:
             result = self.method(arg)
-            logger.debug("Invoking %s on %r → %r", self.method.name, arg, result)
             return result
         except RuntimeError as e:
-            logger.debug("Guard failed or error in %s(%r): %s", self.method.name, arg, e)
             return None
 
     def __eq__(self, other: Any) -> bool:

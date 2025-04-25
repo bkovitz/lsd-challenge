@@ -4,3 +4,4 @@ from .seq import Seq
 from .term import Term, TermBase
 from .types import Guard
 from .var import Span, Var, check_guard
+from .wildcard import Wildcard
