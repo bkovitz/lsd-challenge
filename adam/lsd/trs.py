@@ -68,14 +68,22 @@ class TermRewriteSystem:
         """
         self._rules.insert(0, MethodRule(method))
 
-    def rewrite(self, term: Term) -> Term:
+    def rewrite(self, term: Term, max: int | None = None) -> Term:
         """
         Fully normalize `term` by repeatedly doing single‐step passes until no change.
         """
-        out = self._step(term)
-        return out if out == term else self.rewrite(out)
+        out = self.rewrite_once(term)
+        max = None if max is None else max - 1
 
-    def _step(self, term: Term) -> Term:
+        if max is None:
+            return out if out == term else self.rewrite(out, max)
+        else:
+            while max > 0:
+                term = self.rewrite_once(term)
+                max -= 1
+        return term
+
+    def rewrite_once(self, term: Term) -> Term:
         # 1) Try every rule/method at the root
         for rule in self._rules:
             out = rule.apply(term)
@@ -86,7 +94,7 @@ class TermRewriteSystem:
 
         # 2) If none fired, recurse into Node
         if isinstance(term, Node):
-            new_args = [self._step(arg) for arg in term.body]
+            new_args = [self.rewrite_once(arg) for arg in term.body]
             rebuilt = Node(term.head, *new_args)
             # try firing again on rebuilt node
             for rule in self._rules:
@@ -100,7 +108,7 @@ class TermRewriteSystem:
         if isinstance(term, Seq):
             items: list[Term] = []
             for elt in term:
-                r = self._step(elt)
+                r = self.rewrite_once(elt)
                 if isinstance(r, Seq):
                     items.extend(r)
                 else:
