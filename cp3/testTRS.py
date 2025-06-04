@@ -121,6 +121,12 @@ class TestTRS(unittest.TestCase):
             Subst.from_tups(('...A', Splice.from_text('x', 'y')))
         )
 
+    def test_pmatch_splice_just_one(self) -> None:
+        self.assertEqual(
+            pmatch(as_term('Seq[...A]'), as_term('Seq[x]')),
+            Subst.from_tups(('...A', Splice.from_text('x')))
+        )
+
     def test_pmatch_splice_B(self) -> None:
         self.assertEqual(
             pmatch(as_term('Seq[...A B]'), as_term('Seq[e f g]')),
@@ -157,13 +163,22 @@ class TestTRS(unittest.TestCase):
             )
         )
 
-    def test_pmatch(self) -> None:
+    def test_pmatch_seq2(self) -> None:
         self.assertEqual(
             pmatch(
                 as_term('Seq[A A]'),
                 as_term('Seq[x x]')
             ),
             Subst.from_tups(('A', 'x'))
+        )
+
+    def test_pmatch_seq2_fail(self) -> None:
+        self.assertEqual(
+            pmatch(
+                as_term('Seq[A A]'),
+                as_term('Seq[x y]')
+            ),
+            Subst.bottom
         )
 
     def test_rewrite_succ(self) -> None:

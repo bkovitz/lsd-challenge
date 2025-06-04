@@ -60,6 +60,8 @@ class DollarSymbol:
 
 @dataclass(frozen=True)
 class Term:
+    '''A Term is a symbol followed by brackets, which might contain
+    arguments.'''
     head: Symbol | Variable | SeqVariable | DollarSymbol
     args: Optional[Tuple[Term, ...]] = None
 
@@ -279,7 +281,6 @@ class Subst:
             case _:
                 return Subst.bottom
 
-
     def pmatch_seq(
         self,
         lhs: Iterable[Expr],
@@ -376,7 +377,8 @@ Subst.empty = Subst(pmap())
 Subst.bottom = BottomSubst()
 
 
-def pmatch(lhs: Term, rhs: Term, rules: Optional[RewritingSystem] = None) -> Subst:
+def pmatch(lhs: Term, rhs: Term, rules: Optional[RewritingSystem] = None) \
+-> Subst:
     return Subst.empty.pmatch(lhs, rhs, rules)
 
 @dataclass(frozen=True)
@@ -411,6 +413,9 @@ if __name__ == '__main__':
     print(got)
 
     got = parse_rule('Seq[...A] -> Blah[...A]')
+    print(got)
+
+    got = pmatch(as_term('Seq[...A]'), as_term('Seq[x]'))
     print(got)
 
     #su = Subst.from_tups(('A', 'x'))
