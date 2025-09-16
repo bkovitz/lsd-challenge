@@ -1,0 +1,91 @@
+ELEMENTS
+
+Tags
+    Stuff like 'these two consecutive letters are a Succ run'
+               'these two letters are the same'
+    Derived tags are tags that combine relationships denoted by other tags.
+
+    For example:  "Long run of (relationship) starting from 'a'". This would
+    tag 'abcdefg' as well as 'aaaaaaaaaaa'. This tag has a variable in it.
+    These should be nestable to any depth.
+
+Detectors
+    Each Detector is able to spot a certain relationship and tag it.
+    We need a bunch of detectors. And we need the ability rig up detectors
+    dynamically to detect relationships that correspond to derived tags.
+
+    We need to define a set of atomic tags and atomic detectors. These will
+    likely change as we experiment more, but we need to start with something
+    that plausibly could represent all possible analogies.
+
+Ab initio reduction rules
+    We need some built-in reduction rules that are capable of doing things like
+    this:
+    
+      Paint[
+        Chunk[
+          Seq[Run[L -> Succ]]
+          Length[5]
+          FirstItem[a]]
+        Blank]
+
+    replaces Blank with:
+
+      Painted[Seq[a b c d e]]
+
+Dynamically created reduction rules:
+    We need the ability for the system to make new reduction rules that
+    (a) reproduce part of the canvas from another part, and (b) can fill in
+    blank parts based on other parts.
+
+    IOW, we need the ability to make Delta rules, which have their own lhs and
+    rhs, so the system can spot something that makes the lhs and fill in the
+    rhs in the appropriate place.
+
+Bias
+    It's actually preferable if the system *cannot* solve analogies that involve
+    mathematical expressions like 3n-1.
+
+The soup and the process
+    At all times, there is a "soup" of representations of the original
+    problem statement. Detectors look at the soup, sometimes detect stuff,
+    and when they do, they deposit into the soup.
+
+    The domain of object types in the soup:
+        The elements of the original problem statement.
+        Tags: terms that say something was detected about something else
+            in the soup.
+        Detectors: Executable stuff that was created dynamically, and that
+            other detectors can notice in order to see patterns.
+
+    A more-sophisticated loop can include giving activation levels to the 
+    various detectors, influencing which ones have the highest probability
+    of being tried in the next timestep.
+
+    Another way:
+        System sees example problem and unfinished thing to solve for.
+        1st system tags everything it can.
+        2nd system looks at those tags and tries to figure out what can work.
+
+    The soup is the body of evidence that you have. You're a police detective
+    looking to fit evidence to a template. Templates are in the soup,
+    available to make convincing cases out of. You're in the soup, too.
+
+
+WORK TO DO
+
+    Work out some examples by hand, with all tags and detectors and deltas.
+    Start with the pons asinorum and work through the examples in ch. 8.
+
+    Think some about how the overall framework in code should be. What are
+    the main modules and how do they communicate? Document this tersely.
+
+    Implement a minimal version of that framework and get it to solve the
+    pons asinorum.
+
+    Iterate back to examples-framework-implementation.
+
+    Only after we get some good results: See if we can generalize the tagging
+    and detection so that very domain-specific tags like AdvanceAt[Last]
+    could be derived by much-more primitive tags. Ideally, get a neural to
+    create or embody some sort of tags.

@@ -1,0 +1,9 @@
+"cp3" means "Canvas-and-painters model 3", referring to the 3rd version of
+the model described in the dissertation.
+
+
+To set up the correct Python version and install libraries that the code
+depends on, run:
+
+  make setup
+  . venv/bin/activate

@@ -1,0 +1,27 @@
+RESEARCH QUESTION
+
+Can we make a term-rewriting system (TRS) that, in response to a letterstring
+analogy problem, rigs up custom reduction rules that represent the analogy
+and, when run on the New World, create the correct rhs?
+
+   Representing the analogy: Making reduction rules that convert the Old World
+   lhs to its rhs *and* can run in the New World.
+
+   The analogy-making process must be biased in a human-like way to make
+   reduction rules that are as general as possible. For example, a very poor
+   solution to:
+
+         abc -> abd
+         ijk -> ?
+
+   would be "'abc' maps to 'abd'". That couldn't even run in the New World
+   because it doesn't make the lhs there. Almost as poor would be "lhs maps
+   to 'abd'", which would lead to filling in the New World rhs with 'abd'.
+
+   The search bias should determine (a) the sequence in which possible
+   analogy-elements are explored and (b) which of two or more possibilities
+   is deemed superior.
+
+Maybe: Can we come up with a mathematical proposition that says under what
+conditions analogies can be constructed in this way, and prove it as a
+theorem?
