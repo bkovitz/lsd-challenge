@@ -1,0 +1,109 @@
+Fri Sep 19 17:49:27 PDT 2025  Tiller and Ben
+
+Build the system such that it's blind to what the input is.
+   E.g. make it agnostic to whether it's operating on letters.
+   Each domain (LSD, ARC, whatever) has some lowest-level entities (letters,
+   colors). The core of the model should probably not care about those.
+   There might be a nice domain-agnostic set of relationships, though--same,
+   going-in-a-sequence, being-in-consecutive-places, etc. We might write
+   the model so that the entities are easy to plug in, and the relationships
+   are built in.
+
+Go through the examples in the dissertation and find the ones with really
+unique solutions. 
+
+Soup: Find a shortest-path algorithm that gets from the current state of the
+soup to the good analogy. An alternative: maybe there's a way to derive the
+answer purely based on what's in the soup. Filter out the all but the parts of
+the soup that are relevant to a solution.
+
+   Hypothesis: If you cooked up a bunch of templates ("put this symbol here
+   and it will generate the solution"), many of them might produce the same
+   solution. The more options (more redundant paths to an answer), maybe the
+   better the answer.
+
+   Hypothesis: If you tag the lhses of the Old and New Worlds separately,
+   you'll have tons of ways to tag them, but if you find two that match
+   exactly, that's probably on the right track.
+
+      One way to do this: When a detector notices some feature X in one
+      place in one string, that adds activation to that detector to notice
+      it elsewhere. So, there's a string search bias toward noticing
+      "the same thing" in multiple places, once it's been seen in one place.
+      (The "sequential scent-following match".)
+
+      Another way to do this: Just detect everything you can, all at once,
+      and then superimpose it or something and see where the matches are.
+      (The "Cartesian-product match"--effectively parallel.)
+
+      Should we have some of both of these? Parallel for the lowest-level
+      matching, e.g. it should be easy to spot that consecutive-cell-successor
+      relationships are rampant in one letterstring, and sequential for
+      higher-level thinking, like choosing a plan or inventing and
+      considering a Delta.
+
+
+Maybe look at the rhs more than the lhs:
+
+   Old World:   abc->abd
+   New World:   ijk->?
+
+
+What's the simplest approach we could take to get a result? Pare away any
+features or design goals that add unneeded complexity, even if it's pretty
+cool complexity.
+
+   Abandon the "Drawing Hands" relationship.
+
+Just reimplement Copycat using a term-rewriting system.
+   Like:
+      Simple, focused. Creates a meaningful comparison between two approaches
+      to the same thing. It would neat if we could reimplement Copycat in
+      <3000 lines of code.
+
+   Don't like:
+      Copycat's been done. And it might not be as easy it looks, because
+      Copycat has lots of stuff involving bonds, groups, etc., that we might
+      not want to imitate.
+
+
+Q. How does tagging work with term-rewriting?
+
+A. Big terms. A Chunk is a term that is a collection of tags. Most terms are
+just tags. A Chunk can also have a special argument that means "I apply to
+that thing over there", i.e. a reference to the lhs, the rhs, some substring,
+some basic entities of the domain.
+
+A Chunk can also be "painted" somewhere else. This begins the power to make
+analogies. A Delta tells how to make one Chunk from another. This creates the
+power to make analogies of any levels of depth.
+
+   Chunk[abc, Sequence, CharsNotTheSame[3]]
+
+   Chunk[some_other_chunk, Failed]
+
+
+says "my first argument is tagged with
+all my other arguments". If that Chunk is floating in the soup, then it means
+that the model's attention has noted whatever is in the Chunk.
+
+
+
+FOR NEXT FRIDAY
+
+   A system that just tags strings. (The first thing the model must do!)
+
+   1. Make up some test strings and some desired tags.
+
+   2. Generate Chunk objects, or some sort of term objects (see TRS.py)
+   in code.
+
+LEADING TO THIS GOAL
+
+   1. We have a few term-rewriting rules in the system.
+
+   2. The system generates more term-rewriting rules to represent
+   strings and relationships.
+
+   3. The system completes incomplete relations, using those rules, to
+   fill in the blank.
