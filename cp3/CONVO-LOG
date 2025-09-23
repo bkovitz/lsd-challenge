@@ -1,3 +1,12 @@
+Mon Sep 22 17:54:42 PDT 2025  Tiller and Ben
+
+Done: a bunch of substring taggers, implemented in Java.
+
+FOR THIS FRIDAY: Taggers for the rest of the terms in §8.9, or notes for the
+terms that can't be done right now or don't make sense right now. Might only
+be implement a substantial amount of the terms, maybe not all by this Friday.
+
+
 Fri Sep 19 17:49:27 PDT 2025  Tiller and Ben
 
 Build the system such that it's blind to what the input is.
