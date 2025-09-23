@@ -6,6 +6,10 @@ FOR THIS FRIDAY: Taggers for the rest of the terms in §8.9, or notes for the
 terms that can't be done right now or don't make sense right now. Might only
 be implement a substantial amount of the terms, maybe not all by this Friday.
 
+When looking at the term-rewriting code in TRS.py and testTRS.py, ignore the
+dollar-sign variables. We need to think of an easier way to do what they're
+for. See see what they're for, search for $ in NOTES or ask Ben.
+
 
 Fri Sep 19 17:49:27 PDT 2025  Tiller and Ben
 
